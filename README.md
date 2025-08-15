@@ -35,8 +35,8 @@ Trav Homebody (2pl)
    enabled = true
 
    # UI position (pixels)
-   x = 10
-   y = 118
+   x = 92
+   y = 74
 
    # GPS grid (degrees). 0.01 ≈ ~1.1 km cells
    travel_grid = 0.01
