@@ -12,7 +12,7 @@ from Age/Strength. It awards Traveler XP for first‑time encounters (ESSIDs,
 BSSIDs, OUIs, bands) and discovering new "places". It renders a compact UI
 line that defaults to:
 
-  Trav <title> (<places>pl)
+  Nomad <title> (<places>pl)
 
 This version adds an optional **progress bar** for the next Traveler title.
 
@@ -199,7 +199,7 @@ class Traveler(plugins.Plugin):
         if self.show_progress:
             ui.add_element('TravelProg', LabeledValue(
                 color=BLACK,
-                label='Trav ',
+                label='Trav',
                 value='|     |',
                 position=(self.progress_x, self.progress_y),
                 label_font=fonts.Bold,
