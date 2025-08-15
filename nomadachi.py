@@ -165,7 +165,7 @@ class Traveler(plugins.Plugin):
         self.ui_format = str(self.options.get('format', self.ui_format))
         self.migrate_from_age = bool(self.options.get('migrate_from_age', self.migrate_from_age))
 
-        # Progress bar options (defaults: one row above the Trav line)
+        # Progress bar options (defaults: one row above the Trv line)
         self.show_progress = bool(self.options.get('show_progress', self.show_progress))
         self.progress_x = int(self.options.get('progress_x', self.ui_x))
         self.progress_y = int(self.options.get('progress_y', max(0, self.ui_y - 10)))
@@ -199,7 +199,7 @@ class Traveler(plugins.Plugin):
         if self.show_progress:
             ui.add_element('TravelProg', LabeledValue(
                 color=BLACK,
-                label='Trav',
+                label='Trv',
                 value='|     |',
                 position=(self.progress_x, self.progress_y),
                 label_font=fonts.Bold,
