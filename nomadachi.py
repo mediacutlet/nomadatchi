@@ -2,7 +2,7 @@
 Traveler Plugin (Standalone)
 ===========================
 Version: 1.0.0
-Author: MediaCutlet (Strato) with ChatGPT assist
+Author: MediaCutlet (Strato)
 License: MIT
 
 Purpose
