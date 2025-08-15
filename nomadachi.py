@@ -88,7 +88,7 @@ class Traveler(plugins.Plugin):
     __license__ = 'MIT'
     __description__ = (
         'Standalone travel/novelty progression. Tracks places and awards XP for firsts '
-        '(ESSID/BSSID/OUI/band/place). Compact UI: "Trav <title> (<places>pl)" '
+        '(ESSID/BSSID/OUI/band/place). Compact UI: "Nomad <title> (<places>pl)" '
         'plus an optional progress bar toward the next Traveler title.'
     )
 
@@ -189,7 +189,7 @@ class Traveler(plugins.Plugin):
     def on_ui_setup(self, ui):
         ui.add_element('TravelStat', LabeledValue(
             color=BLACK,
-            label='Trav',
+            label='Nomad',
             value="",
             position=(self.ui_x, self.ui_y),
             label_font=fonts.Bold,
@@ -199,7 +199,7 @@ class Traveler(plugins.Plugin):
         if self.show_progress:
             ui.add_element('TravelProg', LabeledValue(
                 color=BLACK,
-                label='Nomad ',
+                label='Trav ',
                 value='|     |',
                 position=(self.progress_x, self.progress_y),
                 label_font=fonts.Bold,
