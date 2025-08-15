@@ -1,7 +1,7 @@
 """
-Traveler Plugin (Standalone)
-===========================
-Version: 1.0.0
+Nomadachi (Traveler plugin, standalone)
+======================================
+Version: 1.1.1
 Author: MediaCutlet (Strato)
 License: MIT
 
@@ -14,49 +14,53 @@ line that defaults to:
 
   Trav <title> (<places>pl)
 
+This version adds an optional **progress bar** for the next Traveler title.
+
 Install
 -------
 Save as:
-  /usr/local/share/pwnagotchi/custom-plugins/traveler.py
+  /usr/local/share/pwnagotchi/custom-plugins/nomadachi.py
 
 Then:
   sudo systemctl restart pwnagotchi
   journalctl -u pwnagotchi -n 120 --no-pager
 
-Config (add to /etc/pwnagotchi/config.toml)
--------------------------------------------
+Flat-key Config (add to /etc/pwnagotchi/config.toml)
+---------------------------------------------------
 # Enable plugin
-main.plugins.traveler.enabled = true
+main.plugins.nomadachi.enabled = true
 
 # UI position
-main.plugins.traveler.x = 10
-main.plugins.traveler.y = 118
+main.plugins.nomadachi.x = 92
+main.plugins.nomadachi.y = 74
 
 # GPS grid size in degrees (0.01 ≈ 1.1 km)
-main.plugins.traveler.travel_grid = 0.01
+main.plugins.nomadachi.travel_grid = 0.01
 
 # Without GPS, collapse places by band only (nogps-2.4 / nogps-5 / nogps-6)
 # This prevents a dense neighborhood from minting many "places".
-main.plugins.traveler.strict_nogps_places = true
+main.plugins.nomadachi.strict_nogps_places = true
 
 # XP tuning (defaults shown)
-main.plugins.traveler.xp_essid = 2
-main.plugins.traveler.xp_bssid = 1
-main.plugins.traveler.xp_oui   = 1
-main.plugins.traveler.xp_band  = 2
-main.plugins.traveler.xp_place = 10
-
-# Title thresholds (XP → Title)
-# You can override this whole table; keys must be strings in TOML
-# e.g., main.plugins.traveler.titles."0" = "Homebody"
-#       main.plugins.traveler.titles."200" = "Wanderling"
+main.plugins.nomadachi.xp_essid = 2
+main.plugins.nomadachi.xp_bssid = 1
+main.plugins.nomadachi.xp_oui   = 1
+main.plugins.nomadachi.xp_band  = 2
+main.plugins.nomadachi.xp_place = 10
 
 # UI format: default "{title} ({places}pl)"
 # Available tokens: {title}, {level}, {places}
-main.plugins.traveler.format = "{title} ({places}pl)"
+main.plugins.nomadachi.format = "{title} ({places}pl)"
+
+# Progress bar (optional)
+main.plugins.nomadachi.show_progress = true
+main.plugins.nomadachi.progress_x = 0      # defaults to x
+main.plugins.nomadachi.progress_y = 74      # defaults to y-10
+main.plugins.nomadachi.progress_len = 5     # bar cells
+main.plugins.nomadachi.progress_fill = "▥"  # one character
 
 # One‑time migration from Age plugin's /root/age_strength.json travel fields
-main.plugins.traveler.migrate_from_age = true
+main.plugins.nomadachi.migrate_from_age = true
 
 Notes
 -----
@@ -80,11 +84,12 @@ from pwnagotchi.ui.view import BLACK
 
 class Traveler(plugins.Plugin):
     __author__ = 'MediaCutlet (Strato)'
-    __version__ = '1.0.0'
+    __version__ = '1.1.1'
     __license__ = 'MIT'
     __description__ = (
         'Standalone travel/novelty progression. Tracks places and awards XP for firsts '
-        '(ESSID/BSSID/OUI/band/place). Compact UI: "Trav <title> (<places>pl)".'
+        '(ESSID/BSSID/OUI/band/place). Compact UI: "Trav <title> (<places>pl)" '
+        'plus an optional progress bar toward the next Traveler title.'
     )
 
     DEFAULT_TITLES = {
@@ -134,14 +139,22 @@ class Traveler(plugins.Plugin):
         self.ui_y = 118
         self.ui_format = "{title} ({places}pl)"  # tokens: {title},{level},{places}
 
+        # Progress bar UI (new)
+        self.show_progress = True
+        self.progress_x = None
+        self.progress_y = None
+        self.progress_len = 5
+        self.progress_fill = '▥'
+
         # Migration
         self.migrate_from_age = True
 
     # --------------------------- Lifecycle ---------------------------
     def on_loaded(self):
         # Read config
-        self.ui_x = int(self.options.get('x', self.ui_x))
-        self.ui_y = int(self.options.get('y', self.ui_y))
+        # Support aliases traveler_x/y for consistency with Age if desired
+        self.ui_x = int(self.options.get('x', self.options.get('traveler_x', self.ui_x)))
+        self.ui_y = int(self.options.get('y', self.options.get('traveler_y', self.ui_y)))
         self.travel_grid = float(self.options.get('travel_grid', self.travel_grid))
         self.strict_nogps_places = bool(self.options.get('strict_nogps_places', self.strict_nogps_places))
         self.xp_essid = int(self.options.get('xp_essid', self.xp_essid))
@@ -152,6 +165,13 @@ class Traveler(plugins.Plugin):
         self.ui_format = str(self.options.get('format', self.ui_format))
         self.migrate_from_age = bool(self.options.get('migrate_from_age', self.migrate_from_age))
 
+        # Progress bar options (defaults: one row above the Trav line)
+        self.show_progress = bool(self.options.get('show_progress', self.show_progress))
+        self.progress_x = int(self.options.get('progress_x', self.ui_x))
+        self.progress_y = int(self.options.get('progress_y', max(0, self.ui_y - 10)))
+        self.progress_len = int(self.options.get('progress_len', self.progress_len))
+        self.progress_fill = str(self.options.get('progress_fill', self.progress_fill))[:1]
+
         # Titles override from TOML table
         titles_opt = self.options.get('titles')
         if isinstance(titles_opt, dict):
@@ -159,7 +179,7 @@ class Traveler(plugins.Plugin):
                 # keys are strings in TOML, convert to int
                 self.titles = {int(k): str(v) for k, v in titles_opt.items()}
             except Exception as e:
-                logging.error(f"[Traveler] invalid titles in config: {e}")
+                logging.error(f"[Nomadachi] invalid titles in config: {e}")
 
         self.load()
 
@@ -176,6 +196,16 @@ class Traveler(plugins.Plugin):
             text_font=fonts.Medium,
         ))
 
+        if self.show_progress:
+            ui.add_element('TravelProg', LabeledValue(
+                color=BLACK,
+                label='Nomad ',
+                value='|     |',
+                position=(self.progress_x, self.progress_y),
+                label_font=fonts.Bold,
+                text_font=fonts.Medium,
+            ))
+
     def on_ui_update(self, ui):
         title = self.get_title()
         places = len(self.place_hashes)
@@ -185,6 +215,18 @@ class Traveler(plugins.Plugin):
         except Exception:
             text = f"{title} ({places}pl)"
         ui.set('TravelStat', text)
+
+        if self.show_progress:
+            prev_t, next_t = self._prev_next_thresholds()
+            if next_t is None:
+                ui.set('TravelProg', '[MAX]')
+            else:
+                base = 0 if prev_t is None else prev_t
+                span = max(1, next_t - base)
+                prog = max(0.0, min(1.0, (self.travel_xp - base) / span))
+                filled = int(prog * self.progress_len)
+                bar = '|' + (self.progress_fill * filled) + (' ' * (self.progress_len - filled)) + '|'
+                ui.set('TravelProg', bar)
 
     # ---------------------------- Events ----------------------------
     def on_handshake(self, agent, *args):
@@ -230,7 +272,7 @@ class Traveler(plugins.Plugin):
                 self._add_xp(gained)
                 self.save()
         except Exception as e:
-            logging.error(f"[Traveler] on_handshake error: {e}")
+            logging.error(f"[Nomadachi] on_handshake error: {e}")
 
     # ------------------------- Persistence -------------------------
     def load(self):
@@ -247,7 +289,7 @@ class Traveler(plugins.Plugin):
                 self.place_hashes = set(d.get('place_hashes', []))
                 self.last_place_hash = d.get('last_place_hash', None)
         except Exception as e:
-            logging.error(f"[Traveler] load error: {e}")
+            logging.error(f"[Nomadachi] load error: {e}")
 
     def save(self):
         payload = {
@@ -265,7 +307,7 @@ class Traveler(plugins.Plugin):
                 with open(self.data_path, 'w') as f:
                     json.dump(payload, f, indent=2)
             except Exception as e:
-                logging.error(f"[Traveler] save error: {e}")
+                logging.error(f"[Nomadachi] save error: {e}")
 
     # --------------------------- Helpers ---------------------------
     def _add_xp(self, xp):
@@ -275,7 +317,7 @@ class Traveler(plugins.Plugin):
         old = self.travel_level
         self._recalc_level()
         if self.travel_level > old:
-            logging.info(f"[Traveler] Level up → {self.get_title()} (L{self.travel_level}, XP={self.travel_xp})")
+            logging.info(f"[Nomadachi] Level up → {self.get_title()} (L{self.travel_level}, XP={self.travel_xp})")
 
     def _recalc_level(self):
         lvl = 0
@@ -289,6 +331,16 @@ class Traveler(plugins.Plugin):
             if self.travel_xp >= t:
                 return self.titles[t]
         return self.titles.get(0, "Homebody")
+
+    def _prev_next_thresholds(self):
+        """Return (prev_threshold, next_threshold) surrounding current XP."""
+        keys = sorted(self.titles.keys())
+        prev_t = None
+        for t in keys:
+            if self.travel_xp < t:
+                return (prev_t, t)
+            prev_t = t
+        return (prev_t, None)  # at/above max tier
 
     def _channel_to_band(self, channel):
         try:
@@ -378,5 +430,5 @@ class Traveler(plugins.Plugin):
                 mutated = True
 
         if mutated:
-            logging.info("[Traveler] Migrated travel data from age_strength.json")
+            logging.info("[Nomadachi] Migrated travel data from age_strength.json")
             self.save()
