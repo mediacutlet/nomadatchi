@@ -1,6 +1,6 @@
-# Nomadachi
+# Nomadatchi
 
-A Pwnagotchi plugin that turns roaming into a game. **Nomadachi** tracks the unique places your gotchi discovers and awards XP for exploration. It shows a compact travel title + place count on the UI, e.g.:
+A Pwnagotchi plugin that turns roaming into a game. **Nomadatchi** tracks the unique places your gotchi discovers and awards XP for exploration. It shows a compact travel title + place count on the UI, e.g.:
 
 ```
 Trav Homebody (2pl)
@@ -32,7 +32,7 @@ Trav Homebody (2pl)
 2. **Enable it in `/etc/pwnagotchi/config.toml`** (flat key style like your other plugins)
 
    ```toml
-   # Nomadachi (minimal)
+   # Nomadatchi (minimal)
    main.plugins.nomadachi.enabled = true
    main.plugins.nomadachi.x = 92      # UI X (pixels)
    main.plugins.nomadachi.y = 74      # UI Y (pixels)
@@ -72,7 +72,7 @@ Trav Homebody (2pl)
 
 **Places**
 
-* With **GPS**: Nomadachi quantizes latitude/longitude to a grid (default `travel_grid = 0.01°`) and counts new grid cells as new places.
+* With **GPS**: Nomadatchi quantizes latitude/longitude to a grid (default `travel_grid = 0.01°`) and counts new grid cells as new places.
 * Without GPS: the fallback is **band-only** (e.g., `nogps-2.4`, `nogps-5`, `nogps-6`), preventing a dense neighborhood from creating many “places.”
 
 **Travel XP** *(first-time encounters per handshake)*
@@ -89,7 +89,7 @@ Titles change as your **total XP** crosses configured thresholds.
 
 ## 🖥 UI
 
-Nomadachi renders a compact line on the display. Default format:
+Nomadatchi renders a compact line on the display. Default format:
 
 ```
 Trav <title> (<places>pl)
@@ -107,13 +107,13 @@ Data is stored at:
 /root/pwn_traveler.json
 ```
 
-Delete this file to reset your progress (Nomadachi will recreate it).
+Delete this file to reset your progress (Nomadatchi will recreate it).
 
 ---
 
 ## 🔁 Migrating from the Age plugin
 
-If you previously used an Age plugin variant with travel fields, Nomadachi can import from:
+If you previously used an Age plugin variant with travel fields, Nomadatchi can import from:
 
 ```
 /root/age_strength.json
@@ -128,7 +128,7 @@ Set `migrate_from_age = true` (default) and keep that file present for the first
 * **Make "places" denser:** decrease `travel_grid` (e.g., `0.005` ≈ \~550 m).
 * **Slow down rank ups:** reduce XP values and/or raise title thresholds.
 * **Disable fallback liberal places:** keep `strict_nogps_places = true`.
-* **Disable Nomadachi travel in Age:** set `main.plugins.age.enable_travel = false` if your Age plugin also has travel code.
+* **Disable Nomadatchi travel in Age:** set `main.plugins.age.enable_travel = false` if your Age plugin also has travel code.
 
 ---
 
